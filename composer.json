@@ -1,0 +1,14 @@
+{
+    "name": "yodarunamok/keenmvc",
+    "description": "Lightweight MVC framework with pure HTML views and inferred models.",
+    "minimum-stability": "stable",
+    "authors": [
+        {
+            "name": "Chris Hansen",
+            "email": "chris@iviking.org"
+        }
+    ],
+    "require": {
+        "phpunit/phpunit": "3.7.30"
+    }
+}
