@@ -53,21 +53,30 @@ abstract class KeenSingleton {
 class Keen extends KeenSingleton {
     private $config = array();
     private $namedPaths = array();
-    /** @var Path $rootPath */
+    /** @var KeenPath $rootPath */
     private $rootPath;
+    public static $request = array();
 
     protected function initialize ($configPath = '../keen_config.ini') {
         $this->config = parse_ini_file($configPath, true);
         if ($this->config !== false) {
-            $this->rootPath = new Path();
-            // now populate the routes
-            require_once $this->config['environment']['routes_file_path'];
+            $this->rootPath = new KeenPath();
+            // now populate the routes if they're in a separate file
+            if (isset($this->config['environment']['routes_file_path']) && strlen(trim($this->config['environment']['routes_file_path'])) > 0) {
+                require_once $this->config['environment']['routes_file_path'];
+            }
             return true;
         }
         return false;
     }
 
-    public static function addRoute ($type, $path, $controller, $name = '', $configFile = '') {
+    public static function getConfig ($section, $key) {
+        /** @var Keen $keen */
+        $keen = Keen::instance();
+        return $keen->config[$section][$key];
+    }
+
+    public static function route ($path, $controllerName, $controllerFile = '', $name = '', $configFile = '') {
         /** @var Keen $keen */
         if (strlen(trim($configFile)) > 0) {
             $keen = Keen::instance($configFile);
@@ -78,48 +87,62 @@ class Keen extends KeenSingleton {
         if (strlen(trim($name)) > 0) $keen->namedPaths[$name] = $path;
         $pathAsArray = $keen->getArrayFromPath($path);
         if (count($pathAsArray) > $keen->config['environment']['max_path_depth']) {
-            KeenLogger::writeErrorAndExit(
-                'HTTP/1.0 501 Not Implemented',
-                "Requested path exceeds maximum path depth.  Check your KeenMVC configuration. ({$path})"
-            );
+            KeenLogger::writeErrorAndExit('pathDepth', array($path));
         }
-        $keen->rootPath->addRoute(strtolower($type), $pathAsArray, 0, $controller);
+        $keen->rootPath->addRoute($pathAsArray, 0, $controllerName, $controllerFile);
     }
 
-    public function run () {}
+    public function run ($isTest = false) {
+        // grab passed parameters based on request type
+        if ($_SERVER['REQUEST_METHOD'] == 'GET' || $_SERVER['REQUEST_METHOD'] == 'POST') {
+            $requestArrayName = '_' . strtoupper($_SERVER['REQUEST_METHOD']);
+            if (!isset($$requestArrayName)) self::$request = $_REQUEST;
+            else self::$request = $$requestArrayName;
+        }
+        elseif (($stream = fopen('php://input', "r")) !== FALSE) {
+            parse_str(stream_get_contents($stream), self::$request);
+        }
+        else {
+            self::$request = array();
+        }
+        // determine what was requested and go get it
+        $requestPathArray = $this->getArrayFromPath(str_replace(strrchr($_SERVER['REQUEST_URI'], '?'), '', $_SERVER['REQUEST_URI']));
+        $controller = $this->rootPath->getRouteController($requestPathArray, 0);
+        if ($controller instanceof KeenController) {
+            $methodName = strtolower($_SERVER['REQUEST_METHOD']);
+            $output = $controller->$methodName();
+        }
+        else {
+            $output = '';
+            $type = (is_object($controller))?get_class($controller):gettype($controller);
+            KeenLogger::writeErrorAndExit('badController', array($type));
+        }
+        // handle page output
+        if ($isTest) {
+            return $output;
+        }
+        echo $output;
+        return true;
+    }
 
     private function getArrayFromPath ($path) {
-        return explode('/', trim(preg_replace('/\/+/', '/', $path), " \t\n\r\0\x0B/"));
+        $path = trim(preg_replace('/\/+/', '/', $path), " \t\n\r\0\x0B/");
+        return (strlen($path) > 0)?explode('/', $path):array();
     }
 }
 
-class Path {
+class KeenPath {
     private $childPaths = array();
     private $parameterMap = array();
-    private $availableTypes = array('get', 'put', 'post', 'delete');
-
-    protected $get, $put, $post, $delete;
+    private $controllerName;
+    private $controllerFile;
 
     public function __construct () {
-        $routeNotFound = function () {
-            header('HTTP/1.0 404 Not Found');
-            exit;
-        };
-        $this->get = $routeNotFound;
-        $this->put = $routeNotFound;
-        $this->post = $routeNotFound;
-        $this->delete = $routeNotFound;
     }
 
-    public function addRoute ($type, array $pathAsArray, $currentPosition, $controller, $parameterMap = array()) {
-        if (! in_array($type, $this->availableTypes)) {
-            KeenLogger::writeErrorAndExit(
-                'HTTP/1.0 501 Not Implemented',
-                "Specified request type not available.  ({$type})"
-            );
-        }
+    public function addRoute (array $pathAsArray, $currentPosition, $controllerName, $controllerFile, $parameterMap = array()) {
         if (isset($pathAsArray[$currentPosition])) {
-            /** @var Path $childPath */
+            /** @var KeenPath $childPath */
             if (substr($pathAsArray[$currentPosition], 0, 1) == '@') {
                 $parameterMap[$pathAsArray[$currentPosition]] = $currentPosition;
                 $pathSegment = '@';
@@ -127,41 +150,113 @@ class Path {
             else {
                 $pathSegment = $pathAsArray[$currentPosition];
             }
-            if (! isset($this->childPaths[$pathSegment])) $this->childPaths[$pathSegment] = new Path();
+            if (! isset($this->childPaths[$pathSegment])) $this->childPaths[$pathSegment] = new KeenPath();
             $childPath = $this->childPaths[$pathSegment];
-            $childPath->addRoute($type, $pathAsArray, ++$currentPosition, $controller, $parameterMap);
+            $childPath->addRoute($pathAsArray, ++$currentPosition, $controllerName, $controllerFile, $parameterMap);
         }
         else {
-            $this->parameterMap[$type] = $parameterMap;
-            $this->$type = $controller;
+            $this->parameterMap = $parameterMap;
+            $this->controllerName = $controllerName;
+            $this->controllerFile = $controllerFile;
+         }
+    }
+
+    public function getRouteController (array $pathAsArray, $currentPosition, array $parameterArray = array()) {
+        if (isset($pathAsArray[$currentPosition])) {
+            /** @var KeenPath $childPath */
+            if (isset($this->childPaths[$pathAsArray[$currentPosition]])) {
+                $childPath = $this->childPaths[$pathAsArray[$currentPosition]];
+                return $childPath->getRouteController($pathAsArray, ++$currentPosition, $parameterArray);
+            }
+            elseif (isset($this->childPaths['@'])) {
+                $childPath = $this->childPaths['@'];
+                $parameterArray[$currentPosition] = $pathAsArray[$currentPosition];
+                return $childPath->getRouteController($pathAsArray, ++$currentPosition, $parameterArray);
+            }
+            self::routeNotFound();
+            return false;
         }
+        else {
+            if (strlen(trim($this->controllerFile)) > 0) {
+                $result = include_once($this->controllerFile);
+            }
+            else {
+                $controllerPath = dirname(__FILE__) . '/' . Keen::getConfig('environment', 'controllers_path');
+                $controllerPath .= '/' . str_replace('_', '/', $this->controllerName) . '.php';
+                $result = include_once($controllerPath);
+            }
+            if ($result) {
+                /** @var KeenController $controller */
+                $controller = new $this->controllerName();
+                $controller->initializeParameters($this->parameterMap, $parameterArray);
+                return $controller;
+            }
+        }
+        return false;
     }
-}
 
-class KeenLogger extends KeenSingleton {
-    protected function initialize () {
-        return true;
-    }
-
-    public static function writeErrorAndExit ($headerString, $errorMessage) {
-        error_log($errorMessage);
-        header($headerString);
+    protected final static function routeNotFound () {
+        header('HTTP/1.0 404 Not Found');
         exit;
     }
 }
 
-$get = function ($path, $controller, $name = '') {
-    Keen::addRoute('get', $path, $controller, $name);
-};
+abstract class KeenController {
+    protected $pathParameters = array();
 
-$put = function ($path, $controller, $name = '') {
-    Keen::addRoute('put', $path, $controller, $name);
-};
+    public function __initialize () {
+    }
 
-$post = function ($path, $controller, $name = '') {
-    Keen::addRoute('post', $path, $controller, $name);
-};
+    public function get () {
+        self::methodNotImplemented();
+    }
 
-$delete = function ($path, $controller, $name = '') {
-    Keen::addRoute('delete', $path, $controller, $name);
-};
+    public function put () {
+        self::methodNotImplemented();
+    }
+
+    public function post () {
+        self::methodNotImplemented();
+    }
+
+    public function delete () {
+        self::methodNotImplemented();
+    }
+
+    public final function initializeParameters (array $parameterMap, array $parameterArray) {
+        foreach ($parameterMap as $name => $position) {
+            $this->pathParameters[$name] = $parameterArray[$position];
+        }
+    }
+
+    protected final static function methodNotImplemented () {
+        header('HTTP/1.0 501 Not Implemented');
+        exit;
+    }
+}
+
+class KeenLogger extends KeenSingleton {
+    private static $errorsArray = array(
+        'requestType' => array(
+            'head' => 'HTTP/1.0 501 Not Implemented',
+            'message' => 'Specified request type not available.  (<<detail1>>)'
+        ),
+        'pathDepth' => array(
+            'head' => 'HTTP/1.0 501 Not Implemented',
+            'message' => 'Requested path exceeds maximum path depth.  Check your KeenMVC configuration. (<<detail1>>)'
+        ),
+        'badController' => array(
+            'head' => 'HTTP/1.0 501 Not Implemented',
+            'message' => 'Invalid controller specified.  Controller must be a descendant of KeenController. (<<detail1>>)'
+        )
+    );
+    protected function initialize () {
+        return true;
+    }
+
+    public static function writeErrorAndExit ($code, array $details) {
+        error_log(str_replace(array('<<detail1>>', '<<detail2>>'), $details, self::$errorsArray[$code]['message']));
+        header(self::$errorsArray[$code]['head']);
+        exit;
+    }
+}

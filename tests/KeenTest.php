@@ -8,18 +8,37 @@
  */
 
 class KeenTest extends PHPUnit_Framework_TestCase {
-    public function testAddGet () {
-        require_once '../lib/keen.php';
-        global $get;
+    public function testGetRoot () {
+        require_once '../lib/Keen.php';
         // initialize variables for tests
         /** @var Keen $keen */
         $keen = Keen::instance('keen_test_config.ini');
-        $_SERVER['REQUEST_URI'] = '//test//test//';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/';
         // perform associated test(s)
-        ob_start(); // we'll be checking the output
-        $keen->run();
-        $pageOut = ob_get_contents();
-        ob_end_clean();
+        $pageOut = $keen->run(true);
+        $this->assertEquals('GET root', $pageOut);
+    }
+    public function testGetTest () {
+        require_once '../lib/Keen.php';
+        // initialize variables for tests
+        /** @var Keen $keen */
+        $keen = Keen::instance('keen_test_config.ini');
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '//test//';
+        // perform associated test(s)
+        $pageOut = $keen->run(true);
         $this->assertEquals('GET test', $pageOut);
+    }
+    public function testGetTestParam () {
+        require_once '../lib/Keen.php';
+        // initialize variables for tests
+        /** @var Keen $keen */
+        $keen = Keen::instance('keen_test_config.ini');
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '//test//param//';
+        // perform associated test(s)
+        $pageOut = $keen->run(true);
+        $this->assertEquals('GET test param', $pageOut);
     }
 }

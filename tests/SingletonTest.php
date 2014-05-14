@@ -8,7 +8,7 @@
 
 class SingletonTest extends PHPUnit_Framework_TestCase {
     public function testInstantiateSingleton () {
-        require_once '../lib/keen.php';
+        require_once '../lib/Keen.php';
         // initialize variables for tests
         /** @var Keen $keen */
         $keen = Keen::instance('keen_test_config.ini');
@@ -16,7 +16,7 @@ class SingletonTest extends PHPUnit_Framework_TestCase {
         $keen2 = Keen::instance('keen_test_config.ini');
         // perform associated test(s)
         $this->assertNotEquals(false, $keen);
-        $this->assertInstanceOf('Singleton', $keen);
+        $this->assertInstanceOf('KeenSingleton', $keen);
         $this->assertSame($keen, $keen2);
     }
 }

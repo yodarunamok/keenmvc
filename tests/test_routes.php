@@ -1,8 +1,8 @@
 <?php
-require_once '../lib/keen.php';
+require_once '../lib/Keen.php';
 
 // route declarations, or includes are below
-$get('/');
-$get('/test/');
-$get('/test/@test/');
+Keen::route('/', 'TestRoot', '', 'root');
+Keen::route('/test/', 'TestTest', '', 'test');
+Keen::route('/test/@test/', 'TestParam', '../tests/controllers/TestParam.php');
 
