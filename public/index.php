@@ -10,3 +10,5 @@ require_once '../lib/Keen.php';
 /** @var Keen $keen */
 $keen = Keen::instance();
 $keen->run();
+
+echo 'woot';

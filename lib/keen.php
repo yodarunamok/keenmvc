@@ -122,7 +122,7 @@ class Keen extends KeenSingleton {
             return $output;
         }
         echo $output;
-        return true;
+        exit;
     }
 
     private function getArrayFromPath ($path) {
@@ -203,8 +203,12 @@ class KeenPath {
 
 abstract class KeenController {
     protected $pathParameters = array();
+    /** @var KeenView $view */
+    protected $view;
 
-    public function __initialize () {
+    public function __construct () {
+        $viewPath = Keen::getConfig('environment', 'views_path') . '/' . get_class($this) . '.html';
+        $this->view = new KeenView($viewPath);
     }
 
     public function get () {
@@ -232,6 +236,29 @@ abstract class KeenController {
     protected final static function methodNotImplemented () {
         header('HTTP/1.0 501 Not Implemented');
         exit;
+    }
+}
+
+class KeenView {
+    /** @var DOMDocument $domDocument */
+    private $domDocument;
+    private $viewFilePath;
+
+    public function __construct ($viewFilePath) {
+        $this->viewFilePath = $viewFilePath;
+        $this->domDocument = false;
+    }
+
+    public function parse () {
+        return $this->getDomDocument()->saveHTML();
+    }
+
+    private function getDomDocument () {
+        if ($this->domDocument === false) {
+            $this->domDocument = new DOMDocument();
+            $this->domDocument->loadHTMLFile($this->viewFilePath);
+        }
+        return $this->domDocument;
     }
 }
 
