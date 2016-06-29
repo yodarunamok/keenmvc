@@ -13,15 +13,15 @@
  *
  */
 abstract class KeenSingleton {
-    private final function get ($value = null) {
+    final private function get ($value = null) {
         static $staticValue = null;
 
         if(!is_null($value)) $staticValue = $value;
         return $staticValue;
     }
 
-    // Child classes should be using the
-    private final function __construct () { }
+    // Child classes should be using the instance() method instead
+    final private function __construct () { }
 
     /**
      * instance
@@ -47,7 +47,7 @@ abstract class KeenSingleton {
      *
      * @return boolean
      */
-    protected abstract function initialize ();
+    abstract protected function initialize ();
 }
 
 class Keen extends KeenSingleton {
@@ -195,7 +195,7 @@ class KeenPath {
         return false;
     }
 
-    protected final static function routeNotFound () {
+    final protected static function routeNotFound () {
         header('HTTP/1.0 404 Not Found');
         exit;
     }
@@ -227,7 +227,7 @@ abstract class KeenController {
         self::methodNotImplemented();
     }
 
-    public final function initializeParameters (array $parameterMap, array $parameterArray) {
+    final public function initializeParameters (array $parameterMap, array $parameterArray) {
         foreach ($parameterMap as $name => $position) {
             $this->pathParameters[$name] = $parameterArray[$position];
         }
