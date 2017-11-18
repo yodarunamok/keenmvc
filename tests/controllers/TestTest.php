@@ -7,7 +7,7 @@
  */
 require_once dirname(__FILE__) . '/../../lib/Keen.php';
 
-class TestTest extends KeenController {
+class TestTest extends KeenMVC\Controller {
     public function get() {
         return 'GET test';
     }

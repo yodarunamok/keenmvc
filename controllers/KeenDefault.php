@@ -6,7 +6,7 @@
  * Time: 10:49 AM
  */
 
-class KeenDefault extends KeenController {
+class KeenDefault extends KeenMVC\Controller {
     public function get() {
         return $this->view->parse();
     }
