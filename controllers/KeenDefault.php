@@ -7,7 +7,7 @@
  */
 
 class KeenDefault extends KeenMVC\Controller {
-    public function get() {
-        return $this->view->parse();
+    public function get($param = null) {
+        return $this->view->render();
     }
 }

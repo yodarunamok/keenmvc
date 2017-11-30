@@ -26,17 +26,17 @@ abstract class Singleton
 
     final private function __construct()
     {
-        // Child classes should be using the instance() method instead
+        // Child classes should be using the load() method instead
     }
 
     /**
-     * instance
+     * load
      *
      * Creates an instance of a singleton class, if necessary, and returns it.
      *
      * @return  Singleton|boolean   The singleton class instance, or false if initialization fails.
      */
-    public static function instance()
+    public static function load()
     {
         if (static::get() == null) {
             $args = func_get_args();
@@ -60,20 +60,18 @@ abstract class Singleton
 class App extends Singleton
 {
     private $config = array();
-    private $namedPaths = array();
-    /** @var Path $rootPath */
-    private $rootPath;
+    private $routes = array();
     public static $request = array();
 
-    protected function initialize($configPath = '../keen_config.ini')
+    protected function initialize($configPath = 'keen_config.ini.php')
     {
         $this->config = parse_ini_file($configPath, true);
-        if ($this->config !== false) {
-            $this->rootPath = new Path();
-            // now populate the routes if they're in a separate file
-            if (isset($this->config['environment']['routes_file_path']) && strlen(trim($this->config['environment']['routes_file_path'])) > 0) {
-                require_once $this->config['environment']['routes_file_path'];
-            }
+        if (
+            $this->config !== false &&
+            isset($this->config['environment']['routes_file_path']) &&
+            strlen(trim($this->config['environment']['routes_file_path'])) > 0
+        ) {
+            $this->routes = parse_ini_file($this->config['environment']['routes_file_path'], true);
             return true;
         }
         return false;
@@ -82,24 +80,8 @@ class App extends Singleton
     public static function getConfig($section, $key)
     {
         /** @var App $keen */
-        $keen = App::instance();
-        return $keen->config[$section][$key];
-    }
-
-    public static function route($path, $controllerName, $controllerFile = '', $name = '', $configFile = '')
-    {
-        /** @var App $keen */
-        if (strlen(trim($configFile)) > 0) {
-            $keen = App::instance($configFile);
-        } else {
-            $keen = App::instance();
-        }
-        if (strlen(trim($name)) > 0) $keen->namedPaths[$name] = $path;
-        $pathAsArray = $keen->getArrayFromPath($path);
-        if (count($pathAsArray) > $keen->config['environment']['max_path_depth']) {
-            Logger::writeErrorAndExit('pathDepth', array($path));
-        }
-        $keen->rootPath->addRoute($pathAsArray, 0, $controllerName, $controllerFile);
+        $keen = App::load();
+        return isset($keen->config[$section][$key])?$keen->config[$section][$key]:null;
     }
 
     public function run($isTest = false)
@@ -115,96 +97,48 @@ class App extends Singleton
             self::$request = array();
         }
         // determine what was requested and go get it
-        $requestPathArray = $this->getArrayFromPath(str_replace(strrchr($_SERVER['REQUEST_URI'], '?'), '', $_SERVER['REQUEST_URI']));
-        $controller = $this->rootPath->getRouteController($requestPathArray, 0);
-        if ($controller instanceof Controller) {
-            $methodName = strtolower($_SERVER['REQUEST_METHOD']);
-            $output = $controller->$methodName();
-        } else {
-            $output = '';
-            $type = (is_object($controller))?get_class($controller):gettype($controller);
-            Logger::writeErrorAndExit('badController', array($type));
+        // used to be: trim(preg_replace('/\/+/', '/', $path), " \t\n\r\0\x0B/")
+        $path = trim(str_replace(array('////', '///', '//'), '/', "/{$_SERVER['SCRIPT_NAME']}/"), " \t\n\r\0\x0B");
+        $param = '';
+        if (isset($this->routes['routes'][$path])) {
+            // handle exact paths
+            $controllerName = $this->routes['routes'][$path];
+        } elseif (strlen($path) > 2) {
+            // check for and handle paths with trailing parameters
+            // right now only one trailing parameter is allowed, but that could be changed if there were a compelling reason
+            $param = trim(substr($path, strrpos($path, '/', -2)), '/');
+            $path = substr_replace($path, '/@/', -(strlen($param) + 2));
+            if (isset($this->routes['routes'][$path])) {
+                $controllerName = $this->routes['routes'][$path];
+            }
         }
-        // handle page output
-        if ($isTest) {
-            return $output;
-        }
-        echo $output;
-        exit;
-    }
+        // if a route matched, we should have a controller, so go get it
+        if (isset($controllerName)) {
+            include_once "{$this->config['environment']['controllers_path']}/{$controllerName}.php";
 
-    private function getArrayFromPath($path)
-    {
-        $path = trim(preg_replace('/\/+/', '/', $path), " \t\n\r\0\x0B/");
-        return (strlen($path) > 0)?explode('/', $path):array();
-    }
-}
-
-class Path
-{
-    private $childPaths = array();
-    private $parameterMap = array();
-    private $controllerName;
-    private $controllerFile;
-
-    public function __construct ()
-    {
-    }
-
-    public function addRoute(array $pathAsArray, $currentPosition, $controllerName, $controllerFile, $parameterMap = array())
-    {
-        if (isset($pathAsArray[$currentPosition])) {
-            /** @var Path $childPath */
-            if (substr($pathAsArray[$currentPosition], 0, 1) == '@') {
-                $parameterMap[$pathAsArray[$currentPosition]] = $currentPosition;
-                $pathSegment = '@';
+            $controller = new $controllerName();
+            if ($controller instanceof Controller) {
+                $methodName = strtolower((isset(self::$request['_method']))?self::$request['_method']:$_SERVER['REQUEST_METHOD']);
+                $output = $controller->$methodName($param);                
             } else {
-                $pathSegment = $pathAsArray[$currentPosition];
+                $output = '';
+                $type = (is_object($controller))?get_class($controller):gettype($controller);
+                Logger::writeErrorAndExit('badController', array($type));
             }
-            if (! isset($this->childPaths[$pathSegment])) $this->childPaths[$pathSegment] = new Path();
-            $childPath = $this->childPaths[$pathSegment];
-            $childPath->addRoute($pathAsArray, ++$currentPosition, $controllerName, $controllerFile, $parameterMap);
-        } else {
-            $this->parameterMap = $parameterMap;
-            $this->controllerName = $controllerName;
-            $this->controllerFile = $controllerFile;
-         }
-    }
-
-    public function getRouteController(array $pathAsArray, $currentPosition, array $parameterArray = array())
-    {
-        if (isset($pathAsArray[$currentPosition])) {
-            /** @var Path $childPath */
-            if (isset($this->childPaths[$pathAsArray[$currentPosition]])) {
-                $childPath = $this->childPaths[$pathAsArray[$currentPosition]];
-                return $childPath->getRouteController($pathAsArray, ++$currentPosition, $parameterArray);
-            } elseif (isset($this->childPaths['@'])) {
-                $childPath = $this->childPaths['@'];
-                $parameterArray[$currentPosition] = $pathAsArray[$currentPosition];
-                return $childPath->getRouteController($pathAsArray, ++$currentPosition, $parameterArray);
+            // handle page output
+            if ($isTest) {
+                return $output;
             }
-            self::routeNotFound();
-            return false;
-        } else {
-            if (strlen(trim($this->controllerFile)) > 0) {
-                $result = include_once($this->controllerFile);
-            } else {
-                $controllerPath = dirname(__FILE__) . '/' . App::getConfig('environment', 'controllers_path');
-                $controllerPath .= '/' . str_replace('_', '/', $this->controllerName) . '.php';
-                $result = include_once($controllerPath);
-            }
-            if ($result) {
-                /** @var Controller $controller */
-                $controller = new $this->controllerName();
-                $controller->initializeParameters($this->parameterMap, $parameterArray);
-                return $controller;
-            }
+            echo $output;
+            exit;
         }
-        return false;
+        // when no route is found, we fall through here
+        return self::routeNotFound($isTest);
     }
 
-    final protected static function routeNotFound()
+    protected static function routeNotFound($isTest = false)
     {
+        if ($isTest === true) return '';
         header('HTTP/1.0 404 Not Found');
         exit;
     }
@@ -212,7 +146,6 @@ class Path
 
 abstract class Controller
 {
-    protected $pathParameters = array();
     /** @var View $view */
     protected $view;
 
@@ -222,35 +155,31 @@ abstract class Controller
         $this->view = new View($viewPath);
     }
 
-    public function get()
+    public function get($param = null)
     {
-        self::methodNotImplemented();
+        self::methodNotImplemented(get_class($this), 'get', $param);
     }
 
-    public function put()
+    public function put($param = null)
     {
-        self::methodNotImplemented();
+        self::methodNotImplemented(get_class($this), 'put', $param);
     }
 
-    public function post()
+    public function post($param = null)
     {
-        self::methodNotImplemented();
+        self::methodNotImplemented(get_class($this), 'post', $param);
     }
 
-    public function delete()
+    public function delete($param = null)
     {
-        self::methodNotImplemented();
+        self::methodNotImplemented(get_class($this), 'delete', $param);
     }
 
-    final public function initializeParameters(array $parameterMap, array $parameterArray)
+    protected final static function methodNotImplemented($class, $method, $param = null, $forceLog = false)
     {
-        foreach ($parameterMap as $name => $position) {
-            $this->pathParameters[$name] = $parameterArray[$position];
+        if ($param !== null || $forceLog === true) {
+            error_log("Unimplemented method ({$method}) in {$class} called with parameter ({$param})");
         }
-    }
-
-    protected final static function methodNotImplemented()
-    {
         header('HTTP/1.0 501 Not Implemented');
         exit;
     }
@@ -259,27 +188,97 @@ abstract class Controller
 class View
 {
     /** @var \DOMDocument $domDocument */
-    private $domDocument;
+    /** @var  \DOMXPath $domXpath */
     private $viewFilePath;
+    private $domDocument;
+    private $domXpath;
 
     public function __construct($viewFilePath)
     {
         $this->viewFilePath = $viewFilePath;
-        $this->domDocument = false;
     }
 
-    public function parse()
+    public function render($dataArray = array())
     {
-        return $this->getDomDocument()->saveHTML();
-    }
-
-    private function getDomDocument()
-    {
-        if ($this->domDocument === false) {
-            $this->domDocument = new \DOMDocument();
-            $this->domDocument->loadHTMLFile($this->viewFilePath);
+        // turn off and clear libxml errors since some HTML5 elements will cause them
+        libxml_use_internal_errors(true);
+        libxml_clear_errors();
+        // we wait to load up the DOM until we're sure we'll need it...
+        $this->domDocument = new \DOMDocument();
+        $result = $this->domDocument->loadHTMLFile($this->viewFilePath);
+        if ($result !== true) Logger::writeErrorAndExit('badViewFilePath', array($this->viewFilePath));
+        // we'll also need an XPATH object for finding elements
+        $this->domXpath = new \DOMXPath($this->domDocument);
+        $bindingsFile = App::getConfig('environment', 'bindings_file_path');
+        // handle data bindings
+        if (!is_null($bindingsFile)) {
+            $bindings = parse_ini_file($bindingsFile, true);
+            foreach ($bindings as $selector => $binding) {
+                // before anything, make sure there's data in this binding...
+                if (!isset($binding['data'])) continue;
+                // figure out what type of selector was used, and handle appropriately
+                $firstChar = strtolower(substr(trim($selector), 0, 1));
+                if ($firstChar >= 'a' && $firstChar <= 'z') {
+                    $elements = $this->domDocument->getElementsByTagName($selector);
+                } else {
+                    $label = substr($selector, 1);
+                    switch ($firstChar) {
+                        case '.':
+                            $xpath = "//*[@class='{$label}']";
+                            break;
+                        case '#':
+                            $xpath = "//*[@id='{$label}']";
+                            break;
+                        default:
+                            $xpath = $selector;
+                        // do nothing here, for now
+                    }
+                    $elements = $this->domXpath->query($xpath);
+                }
+                // if we found elements that match a data binding, handle that binding
+                if ($elements->length > 0) {
+                    // handle binding with arguments and without appropriately...
+                    $hasArgs = isset($binding['args']) && strlen(trim($binding['args'])) > 0;
+                    $tempData = array($binding['data']);
+                    if ($hasArgs) {
+                        $argsArray = explode(',', str_replace(' ', '', $binding['args']));
+                        foreach ($argsArray as $arg) {
+                            $tempData[] = isset($dataArray[$arg])?$dataArray[$arg]:'';
+                        }
+                    }
+                    foreach ($elements as $element) {
+                        /** @var \DOMNode $element */
+                        $dataOut = $hasArgs?call_user_func_array('sprintf', $tempData):$binding['data'];
+                        if (isset($binding['is_html']) && $binding['is_html']) {
+                            $htmlFragment = $this->domDocument->createDocumentFragment();
+                            $htmlFragment->appendXML($dataOut);
+                            // unless we configured this binding otherwise, remove the current element's children
+                            if (!isset($binding['replace_contents']) || $binding['replace_contents'] === false) {
+                                $this->deleteNodeChildren($element);
+                            }
+                            $element->appendChild($htmlFragment);
+                        } else {
+                            $element->nodeValue = $dataOut;
+                        }
+                    }
+                }
+            }
         }
-        return $this->domDocument;
+        // TODO: provide a way to output XML errors for debugging
+        // finally, output the HTML
+        $result = $this->domDocument->saveHTML();
+        if ($result === false) Logger::writeErrorAndExit('unableToGenerateHtml', array($this->viewFilePath));
+        return $result;
+    }
+
+    /**
+     * @param $node \DOMNode
+     */
+    private function deleteNodeChildren($node) {
+        while (isset($node->firstChild)) {
+            $this->deleteNodeChildren($node->firstChild);
+            $node->removeChild($node->firstChild);
+        }
     }
 }
 
@@ -291,13 +290,17 @@ class Model
 class Logger extends Singleton
 {
     private static $errorsArray = array(
+        'badViewFilePath' => array(
+            'head' => 'HTTP/1.0 500 Internal Server Error',
+            'message' => 'Specified view file could not be loaded. (<<detail1>>)'
+        ),
+        'unableToGenerateHtml' => array(
+            'head' => 'HTTP/1.0 500 Internal Server Error',
+            'message' => 'Unable to generate HTML from view. (<<detail1>>)'
+        ),
         'requestType' => array(
             'head' => 'HTTP/1.0 501 Not Implemented',
             'message' => 'Specified request type not available.  (<<detail1>>)'
-        ),
-        'pathDepth' => array(
-            'head' => 'HTTP/1.0 501 Not Implemented',
-            'message' => 'Requested path exceeds maximum path depth.  Check your KeenMVC configuration. (<<detail1>>)'
         ),
         'badController' => array(
             'head' => 'HTTP/1.0 501 Not Implemented',

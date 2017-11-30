@@ -13,9 +13,9 @@ class RoutesTest extends PHPUnit_Framework_TestCase
         require_once '../lib/Keen.php';
         // initialize variables for tests
         /** @var \KeenMVC\App $keen */
-        $keen = KeenMVC\App::instance('keen_test_config.ini');
+        $keen = KeenMVC\App::load('keen_test_config.ini');
         $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['REQUEST_URI'] = '/';
+        $_SERVER['SCRIPT_NAME'] = '/';
         // perform associated test(s)
         $pageOut = $keen->run(true);
         $this->assertEquals('GET root', $pageOut);
@@ -26,9 +26,9 @@ class RoutesTest extends PHPUnit_Framework_TestCase
         require_once '../lib/Keen.php';
         // initialize variables for tests
         /** @var KeenMVC\App $keen */
-        $keen = KeenMVC\App::instance('keen_test_config.ini');
+        $keen = KeenMVC\App::load('keen_test_config.ini');
         $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['REQUEST_URI'] = '//test//';
+        $_SERVER['SCRIPT_NAME'] = '//test//';
         // perform associated test(s)
         $pageOut = $keen->run(true);
         $this->assertEquals('GET test', $pageOut);
@@ -39,9 +39,9 @@ class RoutesTest extends PHPUnit_Framework_TestCase
         require_once '../lib/Keen.php';
         // initialize variables for tests
         /** @var KeenMVC\App $keen */
-        $keen = KeenMVC\App::instance('keen_test_config.ini');
+        $keen = KeenMVC\App::load('keen_test_config.ini');
         $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['REQUEST_URI'] = '//test//param//';
+        $_SERVER['SCRIPT_NAME'] = '//test//param//';
         // perform associated test(s)
         $pageOut = $keen->run(true);
         $this->assertEquals('GET test param', $pageOut);

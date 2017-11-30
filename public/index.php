@@ -8,7 +8,7 @@
 require_once '../lib/Keen.php';
 
 /** @var KeenMVC\App $keen */
-$keen = KeenMVC\App::instance();
+$keen = KeenMVC\App::load();
 $keen->run();
 
 echo 'woot';

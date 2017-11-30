@@ -8,7 +8,7 @@
 require_once dirname(__FILE__) . '/../../lib/Keen.php';
 
 class TestParam extends KeenMVC\Controller {
-    public function get() {
-        return 'GET test ' . $this->pathParameters['@test'];
+    public function get($pathParameter = null) {
+        return 'GET test ' . $pathParameter;
     }
 }
