@@ -1,0 +1,7 @@
+{
+"version": 3,
+"mappings": "AAAA,IAAI;EACF,IAAI,EAAE,gCAAgC",
+"sources": ["../../sources/docs/styles/default.sass"],
+"names": [],
+"file": "default.css"
+}
