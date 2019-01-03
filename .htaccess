@@ -10,11 +10,11 @@ RewriteEngine On
 RewriteCond %{REQUEST_URI} \.ini$
 RewriteRule \.ini$ - [R=404]
 
+RewriteCond %{REQUEST_URI} \.ini.php$
+RewriteRule \.ini\.php$ - [R=404]
+
 RewriteCond %{REQUEST_URI} .*/lib/.*
 RewriteRule lib/.* - [R=404]
-
-RewriteCond %{REQUEST_URI} .*/routes.php
-RewriteRule routes.php - [R=404]
 
 RewriteCond %{REQUEST_FILENAME} !.*/public/.*
 RewriteRule (.*) public/$1 [QSA]

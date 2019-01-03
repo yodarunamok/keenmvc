@@ -24,6 +24,10 @@ for the JavaScript code in this file
 var NAVTREE =
 [
   [ "KeenMVC", "index.html", [
+    [ "Introduction", "index.html#autotoc_md0", [
+      [ "Installation", "index.html#autotoc_md1", null ],
+      [ "Getting Started", "index.html#autotoc_md2", null ]
+    ] ],
     [ "Data Structures", "annotated.html", [
       [ "Data Structures", "annotated.html", "annotated_dup" ],
       [ "Data Structure Index", "classes.html", null ],
