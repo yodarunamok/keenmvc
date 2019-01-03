@@ -2,3 +2,5 @@
 vendor/*
 composer-setup.php
 composer.phar
+lib/*.ini.php
+!lib/*-template.ini.php
