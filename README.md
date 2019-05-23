@@ -9,7 +9,7 @@
 * Fast, Flexible, Powerful
 * Inferred Models -- this one isn't too hard to find
 * Lightweight -- it's so easy to go too feature-heavy
-* Easy for Newcomers -- we've all been there
+* Relatively Easy for Newcomers -- we've all been there
 * View / Logic Separation  -- this one I couldn't find
 
 The last two were the key.
@@ -22,5 +22,7 @@ And then views. I wanted to be able to take an unmodified HTML file and plug it 
 All that said, I felt like it would be easier for me to create a framework for PHP (where I know there's a need for such a thing),  than to create a desktop server app for Ruby. Enter KeenMVC.
 
 ## Installation
+
+Ideally, when installing KeenMVC for a site that you're building, the `public` folder in the distribution should be made the webroot. If that's not possible &mdash; you have to install into a certain directory, for example &mdash; there is an `.htaccess` file at the root level of the distribution that will help things work properly when using a properly configured Apache server installation.
 
 ## Getting Started
