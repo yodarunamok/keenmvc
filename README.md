@@ -4,7 +4,7 @@
 
 # Introduction
 
-**Keen** was born from my search for an MVC framework with all the *good* bits.  What are the good bits?  Here's my take (YMMV):
+**Keen** was born from my search for an MVC framework with all the *good* bits.  What are the good bits you say?  Here's my take (YMMV):
 
 * Fast, Flexible, Powerful
 * Inferred Models -- this one isn't too hard to find
@@ -26,3 +26,5 @@ All that said, I felt like it would be easier for me to create a framework for P
 Ideally, when installing KeenMVC for a site that you're building, the `public` folder in the distribution should be made the webroot. If that's not possible &mdash; you have to install into a certain directory, for example &mdash; there is an `.htaccess` file at the root level of the distribution that will help things work properly when using a properly configured Apache server installation.
 
 ## Getting Started
+
+
