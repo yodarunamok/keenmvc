@@ -1,6 +1,11 @@
 # Created by .ignore support plugin (hsz.mobi)
+# IDE Items
+/.idea/
+/keenmvc.iml
+# Composer Bits
 vendor/*
 composer-setup.php
 composer.phar
+# Ignore .ini files except templates
 lib/*.ini.php
 !lib/*-template.ini.php

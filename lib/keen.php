@@ -1,6 +1,7 @@
 <?php
 namespace KeenMVC;
 
+use DOMDocument, DOMXPath, DOMNode;
 /**
  * Created by IntelliJ IDEA.
  * Version 0.1
@@ -99,7 +100,7 @@ class App extends Singleton
         }
         // determine what was requested and go get it
         // used to be: trim(preg_replace('/\/+/', '/', $path), " \t\n\r\0\x0B/")
-        $path = trim(str_replace(array('////', '///', '//'), '/', "/{$_SERVER['SCRIPT_NAME']}/"), " \t\n\r\0\x0B");
+        $path = trim(str_replace(array('////', '///', '//'), '/', "/{$_SERVER['REQUEST_URI']}/"), " \t\n\r\0\x0B");
         $param = '';
         if (isset($this->routes['routes'][$path])) {
             // handle exact paths
@@ -188,8 +189,8 @@ abstract class Controller
 
 class View
 {
-    /** @var \DOMDocument $domDocument */
-    /** @var  \DOMXPath $domXpath */
+    /** @var DOMDocument $domDocument */
+    /** @var  DOMXPath $domXpath */
     private $viewFilePath;
     private $domDocument;
     private $domXpath;
@@ -205,11 +206,11 @@ class View
         libxml_use_internal_errors(true);
         libxml_clear_errors();
         // we wait to load up the DOM until we're sure we'll need it...
-        $this->domDocument = new \DOMDocument();
+        $this->domDocument = new DOMDocument();
         $result = $this->domDocument->loadHTMLFile($this->viewFilePath);
         if ($result !== true) Logger::writeErrorAndExit('badViewFilePath', array($this->viewFilePath));
         // we'll also need an XPATH object for finding elements
-        $this->domXpath = new \DOMXPath($this->domDocument);
+        $this->domXpath = new DOMXPath($this->domDocument);
         $bindingsFile = App::getConfig('environment', 'bindings_file_path');
         // handle data bindings
         if (!is_null($bindingsFile)) {
@@ -248,7 +249,7 @@ class View
                         }
                     }
                     foreach ($elements as $element) {
-                        /** @var \DOMNode $element */
+                        /** @var DOMNode $element */
                         $dataOut = $hasArgs?call_user_func_array('sprintf', $tempData):$binding['data'];
                         if (isset($binding['is_html']) && $binding['is_html']) {
                             $htmlFragment = $this->domDocument->createDocumentFragment();
@@ -273,7 +274,7 @@ class View
     }
 
     /**
-     * @param $node \DOMNode
+     * @param $node DOMNode
      */
     private function deleteNodeChildren($node) {
         while (isset($node->firstChild)) {
