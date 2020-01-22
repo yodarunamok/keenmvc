@@ -250,7 +250,11 @@ class View
                     }
                     foreach ($elements as $element) {
                         /** @var DOMNode $element */
-                        $dataOut = $hasArgs?call_user_func_array('sprintf', $tempData):$binding['data'];
+                        if (isset($binding["type"]) && strtolower($binding["type"]) == "file") {
+                           $dataOut = call_user_func_array("file_get_contents", $tempData);
+                        } else {
+                        	$dataOut = $hasArgs?call_user_func_array('sprintf', $tempData):$binding['data'];
+                        }
                         if (isset($binding['is_html']) && $binding['is_html']) {
                             $htmlFragment = $this->domDocument->createDocumentFragment();
                             $htmlFragment->appendXML($dataOut);
