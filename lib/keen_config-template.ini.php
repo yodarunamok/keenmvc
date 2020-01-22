@@ -1,4 +1,5 @@
 ;<?php
+;/* keep these four comment lines at the very top of this file */
 ;/* idea from http://php.net/manual/en/function.parse-ini-file.php#99474 */
 ;die();/*
 
@@ -17,4 +18,4 @@ max_path_depth = 100
 server_address = "localhost"
 
 
-;keep this line at the end of the file */
+;keep this line at the very end of this file */

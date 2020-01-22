@@ -1,4 +1,5 @@
 ;<?php
+;/* keep these four comment lines at the very top of this file */
 ;/* idea from http://php.net/manual/en/function.parse-ini-file.php#99474 */
 ;die();/*
 
@@ -13,4 +14,4 @@
 root = "/"
 
 
-;keep this line at the end of the file */
+;keep this line at the very end of this file */
