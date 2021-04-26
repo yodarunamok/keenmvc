@@ -8,12 +8,14 @@ data = "Keen Test"
 [.test1]
 data = "%s1"
 args = "test"
+is_html = true
 
 
 [.test2]
 data = "test%s%d"
 args = "bogus, two"
-replace_contents = true
+is_html = true
+replace_contents = false
 
 [#test3]
 data = "%s<%d"

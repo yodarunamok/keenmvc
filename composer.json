@@ -8,9 +8,8 @@
             "email": "chris@iviking.org"
         }
     ],
-    "require": {
-        "phpunit/phpunit": "3.7.30",
-        "ext-dom": "*",
-        "ext-libxml": "*"
-    }
+  "require": {
+    "ext-dom": "*",
+    "ext-libxml": "*"
+  }
 }

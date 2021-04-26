@@ -15,7 +15,7 @@ class RoutesTest extends PHPUnit_Framework_TestCase
         /** @var \KeenMVC\App $keen */
         $keen = KeenMVC\App::load('keen_test_config.ini');
         $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = '/';
+        $_SERVER['REQUEST_URI'] = '/';
         // perform associated test(s)
         $pageOut = $keen->run(true);
         $this->assertEquals('GET root', $pageOut);
@@ -28,7 +28,7 @@ class RoutesTest extends PHPUnit_Framework_TestCase
         /** @var KeenMVC\App $keen */
         $keen = KeenMVC\App::load('keen_test_config.ini');
         $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = '//test//';
+        $_SERVER['REQUEST_URI'] = '//test//';
         // perform associated test(s)
         $pageOut = $keen->run(true);
         $this->assertEquals('GET test', $pageOut);
@@ -41,7 +41,7 @@ class RoutesTest extends PHPUnit_Framework_TestCase
         /** @var KeenMVC\App $keen */
         $keen = KeenMVC\App::load('keen_test_config.ini');
         $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = '//test//param//';
+        $_SERVER['REQUEST_URI'] = '//test//param//';
         // perform associated test(s)
         $pageOut = $keen->run(true);
         $this->assertEquals('GET test param', $pageOut);

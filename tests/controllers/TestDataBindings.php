@@ -8,12 +8,12 @@
 require_once dirname(__FILE__) . '/../../lib/Keen.php';
 
 class TestDataBindings extends KeenMVC\Controller {
-    public function get($param = null) {
-        $testBindingData = array(
-            'test' => 'test',
-            'two' => 2,
-            'three' => '3'
-        );
-        return $this->view->render($testBindingData);
-    }
+	public function get($param = null) {
+		$testBindingData = array(
+			'test' => 'test',
+			'two' => 2,
+			'three' => '3'
+		);
+		return $this->view->render($testBindingData);
+	}
 }

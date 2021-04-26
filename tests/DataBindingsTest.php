@@ -16,15 +16,15 @@ class DataBindingsTest extends PHPUnit_Framework_TestCase
         /** @var KeenMVC\App $keen */
         $keen = KeenMVC\App::load('keen_test_config.ini');
         $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['SCRIPT_NAME'] = '/test/data_bindings/';
+        $_SERVER['REQUEST_URI'] = '/test/data_bindings/';
         // initialize test output
-        $expectedOutput = <<<HTML
+        $expectedOut = <<<HTML
 <!DOCTYPE html>
 <html lang="en">
 <head><title>Keen Test</title></head>
 <body>
     test0 <span class="test1">test1</span>
-    <p><span class="test2">test2</span></p>
+    <p><span class="test2">This should <strong>not</strong> be removed!test2</span></p>
     <p id="test3">test&lt;3</p>
     <table id="test4">
         <tr>
@@ -34,8 +34,16 @@ class DataBindingsTest extends PHPUnit_Framework_TestCase
     </table><footer>test5 > test4</footer></body>
 </html>
 HTML;
-        // perform associated test(s)
+        // generate output
         $pageOut = $keen->run(true);
-        $this->assertXmlStringEqualsXmlString($expectedOutput, $pageOut);
+        // Create DOM elements
+        $pageOutput = new DOMDocument();
+        $pageOutput->preserveWhiteSpace = false;
+        $pageOutput->loadHTML($pageOut);
+        $expectedOutput = new DOMDocument();
+        $expectedOutput->preserveWhiteSpace = false;
+        $expectedOutput->loadHTML($expectedOut);
+        // perform associated test(s)
+        $this->assertXmlStringEqualsXmlString($expectedOutput->saveHTML(), $pageOutput->saveHTML());
     }
 }
