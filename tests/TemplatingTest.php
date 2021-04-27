@@ -7,16 +7,16 @@
  */
 
 
-class DataBindingsTest extends PHPUnit_Framework_TestCase
+class TemplatingTest extends PHPUnit_Framework_TestCase
 {
-    public function testGetTestDataBindings()
+    public function testDoTemplating()
     {
         require_once '../lib/Keen.php';
         // initialize variables for tests
         /** @var KeenMVC\App $keen */
         $keen = KeenMVC\App::load('keen_test_config.ini');
         $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['REQUEST_URI'] = '/test/data_bindings/';
+        $_SERVER['REQUEST_URI'] = '/test/templating/';
         // initialize test output
         $expectedOut = <<<HTML
 <!DOCTYPE html>

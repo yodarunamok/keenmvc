@@ -21,7 +21,7 @@ And then views. I wanted to be able to take an unmodified HTML file and plug it 
 
 All that said, I felt like it would be easier for me to create a framework for PHP (where I know there's a need for such a thing),  than to create a desktop server app for Ruby. Enter KeenMVC.
 
-## A Note About `.ini` Files
+## A Note About `.ini` Files and Configuration
 
 Much of the configuration for Keen is handled via `.ini` files. There are a few (I think) very good reasons for this:
 

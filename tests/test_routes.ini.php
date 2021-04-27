@@ -7,7 +7,7 @@
 / = "TestRoot"
 /test/ = "TestTest"
 /test/@/ = "TestParam"
-/test/data_bindings/ = "TestDataBindings"
+/test/templating/ = "TestTemplating"
 
 [aliases]
 ; route aliases (or names) are below

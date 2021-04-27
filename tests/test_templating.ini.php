@@ -3,27 +3,27 @@
 ;die();/*
 
 [title]
-data = "Keen Test"
+pattern = "Keen Test"
 
 [.test1]
-data = "%s1"
-args = "test"
+pattern = "%s1"
+replace = "test"
 is_html = true
 
 
 [.test2]
-data = "test%s%d"
-args = "bogus, two"
+pattern = "test%s%d"
+replace = "bogus, two"
 is_html = true
 replace_contents = false
 
 [#test3]
-data = "%s<%d"
-args = "test, three"
+pattern = "%s<%d"
+replace = "test, three"
 is_html = false
 
 [#test4]
-data = "
+pattern = "
      <tr>
      <td>test 4a</td>
      <td>test 4b</td>
@@ -31,7 +31,7 @@ data = "
 is_html = true
 
 [footer]
-data = "test5 > test4"
+pattern = "test5 > test4"
 
 
 ;keep this line at the end of the file */
