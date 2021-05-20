@@ -118,7 +118,7 @@ class App extends Singleton
         if (isset($controllerName)) {
             include_once "{$this->config['environment']['controllers_path']}/{$controllerName}.php";
 
-            $controller = new $controllerName();
+            $controller = new $controllerName($isTest);
             if ($controller instanceof Controller) {
                 $methodName = strtolower((isset(self::$request['_method']))?self::$request['_method']:$_SERVER['REQUEST_METHOD']);
                 $output = $controller->$methodName($param);                
@@ -140,7 +140,7 @@ class App extends Singleton
 
     protected static function routeNotFound($isTest = false)
     {
-        if ($isTest === true) return '';
+        if ($isTest === true) return '404';
         header('HTTP/1.0 404 Not Found');
         exit;
     }
@@ -149,39 +149,68 @@ class App extends Singleton
 abstract class Controller
 {
     /** @var View $view */
-    protected $view;
+    protected $view = false;
+    protected $data;
+    private $isTest;
 
-    public function __construct()
+    public function __construct($isTest = false)
     {
+        $this->isTest = $isTest;
         $viewPath = App::getConfig('environment', 'views_path') . '/' . get_class($this) . '.html';
-        $this->view = new View($viewPath);
+        // TODO: How do we handle situations where there is no view, but someone attempts to use it?
+        $this->view = new View($this, $viewPath);
+        if (($dataPath = App::getConfig("environment", "template_data_path")) !== null) {
+            if (@$dataArray = include $dataPath) {
+                // TODO: There should be an error if $dataArray is not an array
+                foreach ($dataArray as $key => $value) {
+                    $this->data[$key] = $value;
+                }
+            } else {
+                // TODO: There should be an error if the file specified as $dataPath doesn't exist
+            }
+        }
     }
 
     public function get($param = null)
     {
-        self::methodNotImplemented(get_class($this), 'get', $param);
+        return self::methodNotImplemented(get_class($this), 'get', $param, false, $this->isTest);
     }
 
     public function put($param = null)
     {
-        self::methodNotImplemented(get_class($this), 'put', $param);
+        return self::methodNotImplemented(get_class($this), 'put', $param, false, $this->isTest);
     }
 
     public function post($param = null)
     {
-        self::methodNotImplemented(get_class($this), 'post', $param);
+        return self::methodNotImplemented(get_class($this), 'post', $param, false, $this->isTest);
     }
 
     public function delete($param = null)
     {
-        self::methodNotImplemented(get_class($this), 'delete', $param);
+        return self::methodNotImplemented(get_class($this), 'delete', $param, false, $this->isTest);
     }
 
-    protected final static function methodNotImplemented($class, $method, $param = null, $forceLog = false)
+    public function getControllerData()
+    {
+        return $this->data;
+    }
+ 
+    protected final static function internalServerError($class, $method, $message, $isTest = false)
+    {
+        error_log("Internal Server Error in method ({$method}) of {$class}!");
+        error_log("Error Details: {$message}");
+        if ($isTest === true) return "500";
+        header('HTTP/1.0 500 Internal Server Error');
+        exit;
+    }
+
+    protected final static function methodNotImplemented($class, $method, $param = null, $forceLog = false, $isTest = false)
     {
         if ($param !== null || $forceLog === true) {
             error_log("Unimplemented method ({$method}) in {$class} called with parameter ({$param})");
         }
+        if ($isTest === true) return '501';
         header('HTTP/1.0 501 Not Implemented');
         exit;
     }
@@ -189,19 +218,31 @@ abstract class Controller
 
 class View
 {
-    /** @var string         $viewFilePath */
-    /** @var DOMDocument    $domDocument */
-    /** @var DOMXPath       $domXpath */
+    /** @var Controller             $controller */
+    /** @var string                 $viewFilePath */
+    /** @var DOMDocument            $domDocument */
+    /** @var DOMXPath               $domXpath */
+    /** @var CSS2XPath\Translator   $c2xTranslator */
+    /** @var array                  $pageData */
+    private $controller;
     private $viewFilePath;
     private $domDocument;
     private $domXpath;
+    private $c2xTranslator;
+    private $pageData;
 
-    public function __construct($viewFilePath)
+    /**
+     * View constructor. Takes as its only parameter the path to the HTML file that is the basis of the view.
+     * 
+     * @param   string  $viewFilePath
+     */
+    public function __construct($controller, $viewFilePath)
     {
+        $this->controller = $controller;
         $this->viewFilePath = $viewFilePath;
     }
 
-    public function render($dataArray = array())
+    public function render()
     {
         // turn off and clear libxml errors since some HTML5 elements will cause them
         libxml_use_internal_errors(true);
@@ -213,11 +254,13 @@ class View
         // we'll also need an XPATH object for finding elements
         $this->domXpath = new DOMXPath($this->domDocument);
         $templatingConfig = App::getConfig('environment', 'template_config_path');
+        // Get the data
+        $this->pageData = $this->controller->getControllerData();
         // handle templating
         if (!is_null($templatingConfig)) {
             $elementTemplates = parse_ini_file($templatingConfig, true);
             foreach ($elementTemplates as $selector => $template) {
-                $this->findAndSetElements($selector, $template, $dataArray);
+                $this->findAndSetElements($selector, $template);
             }
         }
         // process any other data that is present for the current page
@@ -238,37 +281,27 @@ class View
         }
     }
 
-    private function findAndSetElements($selector, $elementData, $dataArray) {
+    private function findAndSetElements($selector, $elementData) {
         // before anything, make sure there's associated data...
-        if (!isset($elementData['pattern'])) return;
-        // figure out what type of selector was used, and handle appropriately
-        $firstChar = strtolower(substr(trim($selector), 0, 1));
-        if ($firstChar >= 'a' && $firstChar <= 'z') {
+        if (!isset($elementData['raw_value'])) return;
+        // first check for and process any simple tag passed, otherwise convert any passed CSS identifier to XPath
+        if (preg_match('/^-?[_a-zA-Z]+[_a-zA-Z0-9-]*$/', $selector) === 1) {
             $elements = $this->domDocument->getElementsByTagName($selector);
         } else {
-            $label = substr($selector, 1);
-            switch ($firstChar) {
-                case '.':
-                    $xpath = "//*[@class='{$label}']";
-                    break;
-                case '#':
-                    $xpath = "//*[@id='{$label}']";
-                    break;
-                default:
-                    $xpath = $selector;
-                // do nothing here, for now
-            }
+            require_once "css2xpath/Translator.php";
+            $this->c2xTranslator = new CSS2XPath\Translator();
+            $xpath = $this->c2xTranslator->translate($selector);
             $elements = $this->domXpath->query($xpath);
         }
         // if we found elements that match, handle those elements
         if ($elements->length > 0) {
             // handle elements both with and without replacement data
             $hasReplacement = isset($elementData['replace']) && strlen(trim($elementData['replace'])) > 0;
-            $tempData = array($elementData['pattern']);
+            $tempData = array($elementData['raw_value']);
             if ($hasReplacement) {
                 $replaceArray = explode(',', str_replace(' ', '', $elementData['replace']));
                 foreach ($replaceArray as $arg) {
-                    $tempData[] = isset($dataArray[$arg])?$dataArray[$arg]:'';
+                    $tempData[] = isset($this->pageData[$arg])?$this->pageData[$arg]:'';
                 }
             }
             foreach ($elements as $element) {
@@ -276,7 +309,7 @@ class View
                 if (isset($elementData["type"]) && strtolower($elementData["type"]) == "file") {
                     $dataOut = call_user_func_array("file_get_contents", $tempData);
                 } else {
-                    $dataOut = $hasReplacement?call_user_func_array('sprintf', $tempData):$elementData['pattern'];
+                    $dataOut = $hasReplacement?call_user_func_array('sprintf', $tempData):$elementData['raw_value'];
                 }
                 if (isset($elementData['is_html']) && $elementData['is_html']) {
                     $htmlFragment = $this->domDocument->createDocumentFragment();

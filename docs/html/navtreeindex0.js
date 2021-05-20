@@ -10,14 +10,15 @@ var NAVTREEINDEX0 =
 "class_keen_m_v_c_1_1_controller.html#a095c5d389db211932136b53f25f39685":[1,0,0,1,0],
 "class_keen_m_v_c_1_1_controller.html#a7b1b331cc086c025f934a37c9107667d":[1,0,0,1,1],
 "class_keen_m_v_c_1_1_controller.html#a995298c223c13700fc7957190a814d3a":[1,0,0,1,2],
-"class_keen_m_v_c_1_1_controller.html#acccf2eac8663e0cebe8101e90fbab089":[1,0,0,1,5],
 "class_keen_m_v_c_1_1_controller.html#ad30133cc216bdd0fc3191e00e3dfcc4f":[1,0,0,1,3],
+"class_keen_m_v_c_1_1_controller.html#ad857a1a016767ce3fd06db1a447d5c67":[1,0,0,1,5],
 "class_keen_m_v_c_1_1_logger.html":[1,0,0,2],
 "class_keen_m_v_c_1_1_logger.html#a91098fa7d1917ce4833f284bbef12627":[1,0,0,2,0],
 "class_keen_m_v_c_1_1_model.html":[1,0,0,3],
 "class_keen_m_v_c_1_1_singleton.html":[1,0,0,4],
 "class_keen_m_v_c_1_1_singleton.html#a91098fa7d1917ce4833f284bbef12627":[1,0,0,4,0],
 "class_keen_m_v_c_1_1_view.html":[1,0,0,5],
+"class_keen_m_v_c_1_1_view.html#ac267781c0245802873d51dfad04c4e23":[1,0,0,5,1],
 "class_keen_m_v_c_1_1_view.html#ad67b1e923635bac950f708c00cd47dba":[1,0,0,5,0],
 "classes.html":[1,1],
 "functions.html":[1,3,0],
@@ -27,5 +28,6 @@ var NAVTREEINDEX0 =
 "index.html#autotoc_md0":[0],
 "index.html#autotoc_md1":[0,0],
 "index.html#autotoc_md2":[0,1],
+"index.html#autotoc_md3":[0,2],
 "pages.html":[]
 };

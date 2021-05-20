@@ -1,0 +1,3 @@
+The CSS to XPath translation for this project is adopted mostly from CSS2XPath by Arne Blankerts (https://github.com/theseer/css2xpath). As such, the code in this directory falls under the BSD 3-Clause License which is also present in this directory. Also, the original comment header in the main class is included below, as it seems more useful to me in this file.
+
+The regular expressions used in this class are heavily inspired by and mostly adopted from the css2xpath.js code by Andrea Giammarchi (http://code.google.com/p/css2xpath/). The JavaScript version (css2xpath.js) is licensed under the MIT License
