@@ -150,7 +150,7 @@ abstract class Controller
 {
     /** @var View $view */
     protected $view = false;
-    protected $data;
+    protected $data = array();
     private $isTest;
 
     public function __construct($isTest = false)
@@ -162,9 +162,7 @@ abstract class Controller
         if (($dataPath = App::getConfig("environment", "template_data_path")) !== null) {
             if (@$dataArray = include $dataPath) {
                 // TODO: There should be an error if $dataArray is not an array
-                foreach ($dataArray as $key => $value) {
-                    $this->data[$key] = $value;
-                }
+                $this->data = $dataArray;
             } else {
                 // TODO: There should be an error if the file specified as $dataPath doesn't exist
             }
@@ -189,6 +187,11 @@ abstract class Controller
     public function delete($param = null)
     {
         return self::methodNotImplemented(get_class($this), 'delete', $param, false, $this->isTest);
+    }
+
+    public function addControllerDatum($cssIdentifier, $rawValue, $replace="", $isHtml=false, $replaceContents=true)
+    {
+        $this->data[$cssIdentifier] = ["raw_value" => $rawValue, "replace" => $replace, "is_html" => $isHtml, "replace_contents" => $replaceContents];
     }
 
     public function getControllerData()
@@ -234,7 +237,8 @@ class View
     /**
      * View constructor. Takes as its only parameter the path to the HTML file that is the basis of the view.
      * 
-     * @param   string  $viewFilePath
+     * @param   Controller  $controller
+     * @param   string      $viewFilePath
      */
     public function __construct($controller, $viewFilePath)
     {
@@ -253,18 +257,12 @@ class View
         if ($result !== true) Logger::writeErrorAndExit('badViewFilePath', array($this->viewFilePath));
         // we'll also need an XPATH object for finding elements
         $this->domXpath = new DOMXPath($this->domDocument);
-        $templatingConfig = App::getConfig('environment', 'template_config_path');
         // Get the data
         $this->pageData = $this->controller->getControllerData();
         // handle templating
-        if (!is_null($templatingConfig)) {
-            $elementTemplates = parse_ini_file($templatingConfig, true);
-            foreach ($elementTemplates as $selector => $template) {
-                $this->findAndSetElements($selector, $template);
-            }
+        foreach ($this->pageData as $selector => $templateData) {
+            $this->findAndSetElements($selector, $templateData);
         }
-        // process any other data that is present for the current page
-        // TODO: provide a way to output XML errors for debugging
         // finally, output the HTML
         $result = $this->domDocument->saveHTML();
         if ($result === false) Logger::writeErrorAndExit('unableToGenerateHtml', array($this->viewFilePath));
@@ -281,9 +279,9 @@ class View
         }
     }
 
-    private function findAndSetElements($selector, $elementData) {
+    private function findAndSetElements($selector, $templateData) {
         // before anything, make sure there's associated data...
-        if (!isset($elementData['raw_value'])) return;
+        if (!isset($templateData["raw_value"])) return;
         // first check for and process any simple tag passed, otherwise convert any passed CSS identifier to XPath
         if (preg_match('/^-?[_a-zA-Z]+[_a-zA-Z0-9-]*$/', $selector) === 1) {
             $elements = $this->domDocument->getElementsByTagName($selector);
@@ -296,26 +294,30 @@ class View
         // if we found elements that match, handle those elements
         if ($elements->length > 0) {
             // handle elements both with and without replacement data
-            $hasReplacement = isset($elementData['replace']) && strlen(trim($elementData['replace'])) > 0;
-            $tempData = array($elementData['raw_value']);
+            $hasReplacement = isset($templateData["replace"]) && (is_array($templateData["replace"]) || strlen(trim($templateData["replace"])) > 0);
+            $tempData = array($templateData["raw_value"]);
             if ($hasReplacement) {
-                $replaceArray = explode(',', str_replace(' ', '', $elementData['replace']));
-                foreach ($replaceArray as $arg) {
-                    $tempData[] = isset($this->pageData[$arg])?$this->pageData[$arg]:'';
+                // TODO: there should be an error if $elementData["replace"] is an object
+                if (!is_array($templateData["replace"])) {
+                    $templateData["replace"] = array($templateData["replace"]);
+                }
+                foreach ($templateData["replace"] as $arg) {
+                    $tempData[] = $arg;
                 }
             }
             foreach ($elements as $element) {
                 /** @var DOMNode $element */
-                if (isset($elementData["type"]) && strtolower($elementData["type"]) == "file") {
+                if (isset($templateData["type"]) && strtolower($templateData["type"]) == "file") {
+                    if (isset($templateData["use_include_path"])) $tempData[] = $templateData["use_include_path"];
                     $dataOut = call_user_func_array("file_get_contents", $tempData);
                 } else {
-                    $dataOut = $hasReplacement?call_user_func_array('sprintf', $tempData):$elementData['raw_value'];
+                    $dataOut = $hasReplacement?call_user_func_array("sprintf", $tempData):$templateData["raw_value"];
                 }
-                if (isset($elementData['is_html']) && $elementData['is_html']) {
+                if (isset($templateData["is_html"]) && $templateData["is_html"]) {
                     $htmlFragment = $this->domDocument->createDocumentFragment();
                     $htmlFragment->appendXML($dataOut);
                     // unless we configured these elements otherwise, remove the current element's children
-                    if (!isset($elementData['replace_contents']) || $elementData['replace_contents'] === false) {
+                    if (!isset($templateData["replace_contents"]) || $templateData["replace_contents"] === true) {
                         $this->deleteNodeChildren($element);
                     }
                     $element->appendChild($htmlFragment);

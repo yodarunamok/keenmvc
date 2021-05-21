@@ -7,7 +7,12 @@
  * To change this template use File | Settings | File Templates.
  */
 
-class TestSingleDatum
-{
+require_once dirname(__FILE__) . '/../../lib/Keen.php';
 
+class TestSingleDatum extends KeenMVC\Controller
+{
+    public function get($param = null) {
+        $this->addControllerDatum("#trait", "Love");
+        return $this->view->render();
+    }
 }

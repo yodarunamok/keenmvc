@@ -6,7 +6,6 @@
 
 server_address = "localhost"
 routes_file_path = "lib/test_routes.ini.php"
-template_config_path = "lib/test_templating_config.ini.php"
 template_data_path = "lib/test_templating_data.php"
 controllers_path = "../tests/controllers"
 views_path = "../tests/views"

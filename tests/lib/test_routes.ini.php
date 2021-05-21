@@ -9,6 +9,7 @@
 /test/@/ = "TestParam"
 
 /test_templating/ = "TestTemplating"
+/test_single_datum/ = "TestSingleDatum"
 
 [aliases]
 ; route aliases (or names) are below

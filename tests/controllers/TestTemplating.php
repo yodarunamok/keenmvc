@@ -9,11 +9,6 @@ require_once dirname(__FILE__) . '/../../lib/Keen.php';
 
 class TestTemplating extends KeenMVC\Controller {
 	public function get($param = null) {
-		$testTemplatingData = array(
-			'test' => 'test',
-			'two' => 2,
-			'three' => '3'
-		);
-		return $this->view->render($testTemplatingData);
+		return $this->view->render();
 	}
 }
