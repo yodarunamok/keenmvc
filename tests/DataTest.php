@@ -33,6 +33,17 @@ class DataTest extends PHPUnit_Framework_TestCase
 
     public function testRepeatingData()
     {
+        require_once "../lib/Keen.php";
+        // initialize variables for tests
+        $_SERVER["REQUEST_METHOD"] = "GET";
+        $_SERVER["REQUEST_URI"] = "/test_repeating_data/";
+        // initialize test output
+        $expectedOut = file_get_contents("includes/testRepeatingDataOut.html", true);
+        $this->performOutputTest($expectedOut);
+    }
+
+    public function testRepeatingDataEmpty()
+    {
         // TODO: implement
     }
 
@@ -41,15 +52,25 @@ class DataTest extends PHPUnit_Framework_TestCase
         // TODO: implement
     }
 
+    // This reworks the built-in XML test to test as HTML instead
+    public static function assertHtmlStringEqualsHtmlString($expectedXml, $actualXml, $message = '')
+    {
+        $expected = PHPUnit_Util_XML::load($expectedXml, true);
+        $actual   = PHPUnit_Util_XML::load($actualXml, true);
+
+        static::assertEquals($expected, $actual, $message);
+    }
+
     // Private methods
     private function performOutputTest($expectedOut)
     {
+        // Don't show xml errors
+        libxml_use_internal_errors(true);
         // generate output
         /** @var KeenMVC\App $keen */
         $keen = KeenMVC\App::load("lib/keen_test_environment_config.ini.php");
         $pageOut = $keen->run(true);
         // Create DOM elements
-        libxml_use_internal_errors(true);
         $pageOutput = new DOMDocument();
         $pageOutput->preserveWhiteSpace = false;
         $pageOutput->loadHTML($pageOut);
@@ -57,7 +78,7 @@ class DataTest extends PHPUnit_Framework_TestCase
         $expectedOutput->preserveWhiteSpace = false;
         $expectedOutput->loadHTML($expectedOut);
         // perform associated test(s)
-        $this->assertXmlStringEqualsXmlString($expectedOutput->saveHTML(), $pageOutput->saveHTML());
+        $this->assertHtmlStringEqualsHtmlString($expectedOutput->saveHTML(), $pageOutput->saveHTML());
         libxml_clear_errors();
     }
 }

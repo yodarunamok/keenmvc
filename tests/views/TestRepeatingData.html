@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Repeating Data Test</title>
+</head>
+<body>
+<table>
+    <tr>
+        <th>Product</th>
+        <th>Version</th>
+        <th>Status</th>
+        <th>Notes</th>
+    </tr>
+    <tr data-keenmvc-template="products">
+        <td data-keenmvc="product"></td>
+        <td data-keenmvc="version"></td>
+        <td><select name="status" data-keenmvc="status"><option value=""></option><option value="live">Live</option><option value="retired">Retired</option></select></td>
+        <td><input type="text" name="notes" value=""></td>
+    </tr>
+    <tr data-keenmvc-empty="products">
+        <td colspan="4">No matching data.</td>
+    </tr>
+</table>
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Age</th>
+    </tr>
+    <tr data-keenmvc-template="people">
+        <td data-keenmvc="product"></td>
+        <td data-keenmvc="version"></td>
+        <td><input type="text" name="notes" value=""></td>
+    </tr>
+    <tr data-keenmvc-empty="people">
+        <td colspan="3">No matching data.</td>
+    </tr>
+</table>
+</body>
+</html>

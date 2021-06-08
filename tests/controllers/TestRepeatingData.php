@@ -9,10 +9,9 @@
 
 require_once dirname(__FILE__) . '/../../lib/Keen.php';
 
-class TestSingleDatum extends KeenMVC\Controller
+class TestRepeatingData extends KeenMVC\Controller
 {
     public function get($param = null) {
-        $this->addDataCustom("#trait", "Love");
         return $this->view->render();
     }
 }

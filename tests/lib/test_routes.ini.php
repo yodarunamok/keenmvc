@@ -10,6 +10,7 @@
 
 /test_templating/ = "TestTemplating"
 /test_single_datum/ = "TestSingleDatum"
+/test_repeating_data/ = "TestRepeatingData"
 
 [aliases]
 ; route aliases (or names) are below
