@@ -360,6 +360,15 @@ class View
                                     }
                                     break;
                                 case "select":
+                                    $valuesArray = explode("\n", str_replace(["\r\n", "\r"], "\n", $row[$valueNodeName]));
+                                    $tempOptions = $this->findElementsBySelector("option", $valueNode);
+                                    foreach ($tempOptions as $tempOption) {
+                                        if (in_array($tempOption->getAttribute("value"), $valuesArray)) {
+                                            $tempOption->setAttribute("selected", "selected");
+                                        } else {
+                                            $tempOption->removeAttribute("selected");
+                                        }
+                                    }
                                     break;
                                 default:
                                     $valueTemplate = $this->controller->getDataTemplate($valueNodeName);
