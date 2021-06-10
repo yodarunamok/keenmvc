@@ -9,13 +9,17 @@
         <th>Product</th>
         <th>Version</th>
         <th>Status</th>
+        <th>Checks</th>
+        <th>Ready?</th>
         <th>Notes</th>
     </tr>
     <tr data-keenmvc-template="products">
         <td data-keenmvc="product"></td>
         <td data-keenmvc="version"></td>
         <td><select name="status" data-keenmvc="status"><option value=""></option><option value="live">Live</option><option value="retired">Retired</option></select></td>
-        <td><input type="text" name="notes" value=""></td>
+        <td><input type="checkbox" name="checks" data-keenmvc="checks" value="a"><input type="checkbox" name="checks" data-keenmvc="checks" value="b"><input type="checkbox" name="checks" data-keenmvc="checks" value="c"></td>
+        <td><input type="radio" name="ready" data-keenmvc="ready" value="y"><input type="radio" name="ready" data-keenmvc="ready" value="n"></td>
+        <td><input type="text" name="notes" value="" data-keenmvc="notes"></td>
     </tr>
     <tr data-keenmvc-empty="products">
         <td colspan="4">No matching data.</td>

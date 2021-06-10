@@ -297,6 +297,8 @@ class View
 
     public function render()
     {
+        // Initialize variables
+        $nodesToRemove = array();
         // Turn off and clear libxml errors since some HTML5 elements will cause them
         libxml_use_internal_errors(true);
         libxml_clear_errors();
@@ -317,13 +319,9 @@ class View
             $currentDataset = $this->controller->getData($currentDatasetName);
             // Is there data for this template? If so...
             if (is_array($currentDataset) && count($currentDataset) > 0) {
-                // ...remove corresponding empty template(s)...
-                $emptyNodesToRemove = array();
+                // ...queue corresponding empty template(s) for removal...
                 foreach ($this->findElementsBySelector("[data-keenmvc-empty={$currentDatasetName}]") as $emptyTemplate) {
-                    $emptyNodesToRemove[] = $emptyTemplate;
-                }
-                foreach ($emptyNodesToRemove as $tempEmptyNode) {
-                    $tempEmptyNode->parentNode->removeChild($tempEmptyNode);
+                    $nodesToRemove[] = $emptyTemplate;
                 }
                 // ...then populate the data
                 foreach ($currentDataset as $row) {
@@ -377,10 +375,13 @@ class View
                         }
                     }
                 }
-            } else {
-                // There was no data for this template, so remove it
-                // TODO: implement
             }
+            // Whether we used the template or not, we're done with it at this point
+            $nodesToRemove[] = $template;
+        }
+        // Remove any bits that were queued for removal
+        foreach ($nodesToRemove as $nodeToRemove) {
+            $nodeToRemove->parentNode->removeChild($nodeToRemove);
         }
         // Finally, output the HTML
         $result = $this->domDocument->saveHTML();
@@ -456,7 +457,7 @@ class View
     {
         require_once "css2xpath/Translator.php";
         $this->c2xTranslator = new CSS2XPath\Translator();
-        $xpath = $this->c2xTranslator->translate($elementSelector);
+        $xpath = ($contextNode !== null?".":"") . $this->c2xTranslator->translate($elementSelector);
         $elements = $this->domXpath->query($xpath, $contextNode);
         if ($elements === false) {
             App::serverError("Invalid selector specified ({$elementSelector})");

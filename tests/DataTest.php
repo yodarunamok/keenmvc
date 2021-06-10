@@ -42,11 +42,6 @@ class DataTest extends PHPUnit_Framework_TestCase
         $this->performOutputTest($expectedOut);
     }
 
-    public function testRepeatingDataEmpty()
-    {
-        // TODO: implement
-    }
-
     public function testKeenModel()
     {
         // TODO: implement
@@ -77,8 +72,10 @@ class DataTest extends PHPUnit_Framework_TestCase
         $expectedOutput = new DOMDocument();
         $expectedOutput->preserveWhiteSpace = false;
         $expectedOutput->loadHTML($expectedOut);
+        // Remove any lines with only spaces in the test output, as this might be generated, but we shouldn't have to write for it
+        $pageOutputString = preg_replace('/\R\s+(\R)/', '$1', $pageOutput->saveHTML());
         // perform associated test(s)
-        $this->assertHtmlStringEqualsHtmlString($expectedOutput->saveHTML(), $pageOutput->saveHTML());
+        $this->assertHtmlStringEqualsHtmlString($expectedOutput->saveHTML(), $pageOutputString);
         libxml_clear_errors();
     }
 }
