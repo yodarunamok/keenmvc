@@ -17,4 +17,4 @@ lib/*.ini.php
 
 # Should be standalone -- no modules
 .gitmodules
-keenmvc-tests
+/keenmvc-tests/
