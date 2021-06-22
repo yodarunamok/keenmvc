@@ -14,3 +14,7 @@ lib/*.ini.php
 
 # Developer Tools
 /phpunit-5.7.9.phar
+
+# Should be standalone -- no modules
+.gitmodules
+keenmvc-tests
