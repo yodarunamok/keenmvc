@@ -429,8 +429,17 @@ class View
                 if (isset($elementData["type"]) && strtolower($elementData["type"]) == "file") {
                     if (isset($elementData["use_include_path"])) $tempData[] = $elementData["use_include_path"];
                     $dataOut = call_user_func_array("file_get_contents", $tempData);
+                    if ($dataOut === false) {
+                        error_log("Unable to get file contents based on data given: ($elementSelector)");
+                        error_log(print_r($tempData, true));
+                        $dataOut = "";
+                    }
                 } else {
                     $dataOut = $hasReplacement?call_user_func_array("sprintf", $tempData):$elementData["raw_value"];
+                    if ($dataOut === false) {
+                        error_log("Data out was false ($elementSelector)");
+                        $dataOut = "";
+                    }
                 }
                 if (isset($elementData["is_html"]) && $elementData["is_html"]) {
                     $htmlFragment = $this->domDocument->createDocumentFragment();
