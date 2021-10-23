@@ -102,7 +102,7 @@ class App extends Singleton
         }
         // determine what was requested and go get it
         // used to be: trim(preg_replace('/\/+/', '/', $path), " \t\n\r\0\x0B/")
-        $path = trim(str_replace(array('////', '///', '//'), '/', "/{$_SERVER['REQUEST_URI']}/"), " \t\n\r\0\x0B");
+        $path = trim(str_replace(array('////', '///', '//'), '/', "/{$_SERVER['REQUEST_URI']}/"));
         $param = '';
         if (isset($this->routes['routes'][$path])) {
             // handle exact paths
@@ -175,10 +175,12 @@ abstract class Controller
         $this->view = new View($this, $viewPath);
         if (($dataPath = App::getConfig("environment", "template_data_path")) !== null) {
             if (@$dataArray = include $dataPath) {
-                // TODO: There should be an error if $dataArray is not an array
+                if (!is_array($dataArray)) {
+                    error_log("Data for templates is not an array");
+                }
                 $this->dataCustom = $dataArray;
             } else {
-                // TODO: There should be an error if the file specified as $dataPath doesn't exist
+                error_log("Invalid path specified for templating data ($dataPath)");
             }
         }
     }
@@ -250,8 +252,8 @@ abstract class Controller
 
     protected final static function internalServerError($class, $method, $message, $isTest = false)
     {
-        error_log("Internal Server Error in method ({$method}) of {$class}!");
-        error_log("Error Details: {$message}");
+        error_log("Internal Server Error in method ($method) of $class!");
+        error_log("Error Details: $message");
         if ($isTest === true) return "500";
         header('HTTP/1.0 500 Internal Server Error');
         exit;
@@ -260,7 +262,7 @@ abstract class Controller
     protected final static function methodNotImplemented($class, $method, $param = null, $forceLog = false, $isTest = false)
     {
         if ($param !== null || $forceLog === true) {
-            error_log("Unimplemented method ({$method}) in {$class} called with parameter ({$param})");
+            error_log("Unimplemented method ($method) in $class called with parameter ($param)");
         }
         if ($isTest === true) return '501';
         header('HTTP/1.0 501 Not Implemented');
@@ -351,7 +353,7 @@ class View
                                             break;
                                         case "file":
                                         case "image":
-                                            error_log("{$inputType} inputs are not supported for dynamic data");
+                                            error_log("$inputType inputs are not supported for dynamic data");
                                             break;
                                         default:
                                             $valueNode->setAttribute("value", $row[$valueNodeName]);
@@ -471,7 +473,7 @@ class View
         $xpath = ($contextNode !== null?".":"") . $this->c2xTranslator->translate($elementSelector);
         $elements = $this->domXpath->query($xpath, $contextNode);
         if ($elements === false) {
-            App::serverError("Invalid selector specified ({$elementSelector})");
+            App::serverError("Invalid selector specified ($elementSelector)");
             exit;
         }
         return $elements;
