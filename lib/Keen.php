@@ -453,6 +453,8 @@ class View
                     $element->nodeValue = $dataOut;
                 }
             }
+        } else {
+            trigger_error("No elements matched '$elementSelector'", E_USER_WARNING);
         }
     }
 
