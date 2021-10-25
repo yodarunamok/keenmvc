@@ -444,19 +444,20 @@ class View
                     }
                 }
                 if (isset($elementData["is_html"]) && $elementData["is_html"]) {
-                    $htmlFragment = $this->domDocument->createDocumentFragment();
-                    $htmlFragment->appendXML($dataOut);
+                    // TODO: Add note about requirement for items flagged with is_html == true to BE html or wrapped in <p></p> tags
+                    $htmlFragment = new DOMDocument();
+                    $htmlFragment->loadHTML($dataOut);
                     // unless we configured these elements otherwise, remove the current element's children
                     if (!isset($elementData["replace_contents"]) || $elementData["replace_contents"] === true) {
                         $this->deleteNodeChildren($element);
                     }
-                    $element->appendChild($htmlFragment);
+                    $element->appendChild($this->domDocument->importNode($htmlFragment->documentElement, true));
                 } else {
                     $element->nodeValue = $dataOut;
                 }
             }
         } else {
-            trigger_error("No elements matched '$elementSelector'", E_USER_WARNING);
+            trigger_error("No elements matched '$elementSelector'", E_USER_NOTICE);
         }
     }
 
