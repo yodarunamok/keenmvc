@@ -429,7 +429,7 @@ class View
             foreach ($elements as $element) {
                 /** @var DOMNode $element */
                 if (isset($elementData["type"]) && strtolower($elementData["type"]) == "file") {
-                    if (isset($elementData["use_include_path"])) $tempData[] = $elementData["use_include_path"];
+                    if (isset($elementData["use_include_path"]) && count($tempData) == 1) $tempData[] = $elementData["use_include_path"];
                     $dataOut = call_user_func_array("file_get_contents", $tempData);
                     if ($dataOut === false) {
                         error_log("Unable to get file contents based on data given: ($elementSelector)");
