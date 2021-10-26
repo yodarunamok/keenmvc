@@ -449,11 +449,12 @@ class View
                     // TODO: Add note about requirement for items flagged with is_html == true to BE html or wrapped in <p></p> tags
                     $htmlFragment = new DOMDocument();
                     $htmlFragment->loadHTML($dataOut);
+                    $tempDocument = new DOMDocument();
                     // unless we configured these elements otherwise, remove the current element's children
                     if (!isset($elementData["replace_contents"]) || $elementData["replace_contents"] === true) {
                         $this->deleteNodeChildren($element);
                     }
-                    $element->appendChild($htmlFragment->importNode($htmlFragment->documentElement, true));
+                    $element->appendChild($tempDocument->importNode($htmlFragment->documentElement, true));
                 } else {
                     $element->nodeValue = $dataOut;
                 }
