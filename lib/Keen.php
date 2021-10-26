@@ -457,6 +457,7 @@ class View
                 } else {
                     $element->nodeValue = $dataOut;
                 }
+                break;
             }
         } else {
             trigger_error("No elements matched '$elementSelector'", E_USER_NOTICE);
