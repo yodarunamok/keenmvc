@@ -442,6 +442,7 @@ class View
                 }
             }
             foreach ($elements as $element) {
+                error_log("Elements: " . count($elements));
                 /** @var DOMNode $element */
                 if (isset($elementData["is_html"]) && $elementData["is_html"]) {
                     // TODO: Add note about requirement for items flagged with is_html == true to BE html or wrapped in <p></p> tags
