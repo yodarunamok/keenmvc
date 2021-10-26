@@ -406,7 +406,7 @@ class View
         // before anything, make sure there's associated data...
         if (!isset($elementData["raw_value"])) return;
         // check for and process any simple tag passed, otherwise convert any passed CSS identifier to XPath
-        if (preg_match('/^-?[_a-zA-Z]+[_a-zA-Z0-9-]*$/', $elementSelector) === 1) {
+        if (false && preg_match('/^-?[_a-zA-Z]+[_a-zA-Z0-9-]*$/', $elementSelector) === 1) {
             $elements = $this->domDocument->getElementsByTagName($elementSelector);
         } else {
             $elements = $this->findElementsBySelector($elementSelector);
@@ -449,12 +449,11 @@ class View
                     // TODO: Add note about requirement for items flagged with is_html == true to BE html or wrapped in <p></p> tags
                     $htmlFragment = new DOMDocument();
                     $htmlFragment->loadHTML($dataOut);
-                    $tempDocument = new DOMDocument();
                     // unless we configured these elements otherwise, remove the current element's children
                     if (!isset($elementData["replace_contents"]) || $elementData["replace_contents"] === true) {
                         $this->deleteNodeChildren($element);
                     }
-                    $element->appendChild($htmlFragment->documentElement);
+                    $element->appendChild($this->domDocument->importNode($htmlFragment->documentElement, true));
                 } else {
                     $element->nodeValue = $dataOut;
                 }
