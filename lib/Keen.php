@@ -310,8 +310,9 @@ class View
         if ($result !== true) Logger::writeErrorAndExit('badViewFilePath', array($this->viewFilePath));
         // We'll also need an XPATH object for finding elements
         $this->domXpath = new DOMXPath($this->domDocument);
-       // Handle templating and custom
-        foreach ($this->controller->getDataCustom() as $elementSelector => $elementData) {
+        // Handle templating and custom
+        $controllerCustomData = $this->controller->getDataCustom();
+        foreach ($controllerCustomData as $elementSelector => $elementData) {
             $this->findAndSetElements($elementSelector, $elementData);
         }
         // Handle models
