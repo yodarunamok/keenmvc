@@ -405,12 +405,8 @@ class View
     private function findAndSetElements($elementSelector, $elementData) {
         // before anything, make sure there's associated data...
         if (!isset($elementData["raw_value"])) return;
-        // check for and process any simple tag passed, otherwise convert any passed CSS identifier to XPath
-        if (false && preg_match('/^-?[_a-zA-Z]+[_a-zA-Z0-9-]*$/', $elementSelector) === 1) {
-            $elements = $this->domDocument->getElementsByTagName($elementSelector);
-        } else {
-            $elements = $this->findElementsBySelector($elementSelector);
-        }
+        // grab elements -- getElementsByTagName() is not an option as changes are made which results in infinite looping
+        $elements = $this->findElementsBySelector($elementSelector);
         // if we found elements that match, handle those elements
         if ($elements->length > 0) {
             // handle elements both with and without replacement data
