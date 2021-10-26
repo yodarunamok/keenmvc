@@ -438,7 +438,6 @@ class View
                     $dataOut = "";
                 }
             }
-            $elementCount = count($elements);
             foreach ($elements as $element) {
                 /** @var DOMNode $element */
                 if (isset($elementData["is_html"]) && $elementData["is_html"]) {
@@ -452,10 +451,6 @@ class View
                     $element->appendChild($this->domDocument->importNode($htmlFragment->documentElement, true));
                 } else {
                     $element->nodeValue = $dataOut;
-                }
-                if (count($elements) != $elementCount) {
-                    error_log("Element count changed");
-                    break;
                 }
             }
         } else {
