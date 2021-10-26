@@ -454,7 +454,7 @@ class View
                     if (!isset($elementData["replace_contents"]) || $elementData["replace_contents"] === true) {
                         $this->deleteNodeChildren($element);
                     }
-                    $element->appendChild($tempDocument->importNode($htmlFragment->documentElement, true));
+                    $element->appendChild($htmlFragment->documentElement);
                 } else {
                     $element->nodeValue = $dataOut;
                 }
